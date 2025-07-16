@@ -1,0 +1,148 @@
+<Window
+    x:Class="Wff.Views.MainWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:Wff.ViewModels"
+    Title="Wff"
+    d:DesignHeight="450"
+    d:DesignWidth="800"
+    x:DataType="vm:MainWindowViewModel"
+    Icon="/Assets/avalonia-logo.ico"
+    mc:Ignorable="d">
+
+    <Design.DataContext>
+        <!--
+            This only sets the DataContext for the previewer in an IDE,
+            to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.fs)
+        -->
+        <vm:MainWindowViewModel />
+    </Design.DataContext>
+
+    <!--  Will fix this  -->
+    <Grid RowDefinitions="400,Auto">
+        <ScrollViewer>
+            <Grid RowDefinitions="*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*,*">
+                <Grid Grid.Row="0" ColumnDefinitions="*,*">
+                    <TextBlock>Audio</TextBlock>
+                    <ComboBox
+                        Grid.Column="1"
+                        ItemsSource="{Binding AudioDevices}"
+                        SelectedItem="{Binding AudioDevice}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+
+                <Grid Grid.Row="1" ColumnDefinitions="*,*">
+                    <TextBlock>Video Codec</TextBlock>
+                    <ComboBox
+                        Grid.Column="1"
+                        ItemsSource="{Binding VideoCodecs}"
+                        SelectedItem="{Binding VideoCodec}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+
+                <Grid Grid.Row="2" ColumnDefinitions="*,*">
+                    <TextBlock>Framerate</TextBlock>
+                    <ComboBox
+                        Grid.Column="1"
+                        ItemsSource="{Binding Framerates}"
+                        SelectedIndex="0"
+                        SelectedItem="{Binding Framerate}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+
+                <Grid Grid.Row="3" ColumnDefinitions="*,*">
+                    <TextBlock>Device</TextBlock>
+                    <ComboBox Grid.Column="1" SelectedIndex="0">
+                        <ComboBoxItem>Text Item 1</ComboBoxItem>
+                        <ComboBoxItem>Text Item 2</ComboBoxItem>
+                    </ComboBox>
+                </Grid>
+
+                <Grid Grid.Row="4" ColumnDefinitions="*,*">
+                    <TextBlock>Dmabuf</TextBlock>
+                    <CheckBox Grid.Column="1" IsChecked="{Binding Dmabuf}" />
+                </Grid>
+
+                <Grid Grid.Row="5" ColumnDefinitions="*,*">
+                    <TextBlock>No Damage</TextBlock>
+                    <CheckBox Grid.Column="1" IsChecked="{Binding Damage}" />
+                </Grid>
+
+                <Grid Grid.Row="6" ColumnDefinitions="*,*">
+                    <TextBlock>Filename</TextBlock>
+                    <TextBox Grid.Column="1" Text="{Binding Filename}" />
+                </Grid>
+
+
+                <Grid Grid.Row="7" ColumnDefinitions="*,*">
+                    <TextBlock>Geometry</TextBlock>
+                    <Button Grid.Column="1" Content="Select" />
+                </Grid>
+
+                <Grid Grid.Row="8" ColumnDefinitions="*,*">
+                    <TextBlock>Output</TextBlock>
+                    <ComboBox Grid.Column="1">
+                        <ComboBoxItem>Text Item 1</ComboBoxItem>
+                        <ComboBoxItem>Text Item 2</ComboBoxItem>
+                    </ComboBox>
+                </Grid>
+
+                <Grid Grid.Row="9" ColumnDefinitions="*,*">
+                    <TextBlock>Audio Backend</TextBlock>
+                    <ComboBox
+                        Grid.Column="1"
+                        ItemsSource="{Binding AudioBackends}"
+                        SelectedItem="{Binding AudioBackend}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+
+                <Grid Grid.Row="10" ColumnDefinitions="*,*">
+                    <TextBlock>Audio Codec</TextBlock>
+                    <ComboBox
+                        Grid.Column="1"
+                        ItemsSource="{Binding AudioCodecs}"
+                        SelectedItem="{Binding AudioCodec}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </Grid>
+            </Grid>
+        </ScrollViewer>
+
+        <Grid Grid.Row="1">
+            <Button
+                Command="{Binding TryStopRecordingCommand}"
+                Content="Stop Recording"
+                IsVisible="{Binding IsRecording}" />
+            <Button
+                Command="{Binding TryStartRecordingCommand}"
+                Content="Start Recording"
+                IsVisible="{Binding !IsRecording}" />
+        </Grid>
+    </Grid>
+</Window>
