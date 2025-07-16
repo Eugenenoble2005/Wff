@@ -11,8 +11,7 @@ open Wff.Views
 type App() =
     inherit Application()
 
-    override this.Initialize() =
-            AvaloniaXamlLoader.Load(this)
+    override this.Initialize() = AvaloniaXamlLoader.Load(this)
 
     override this.OnFrameworkInitializationCompleted() =
 
@@ -22,7 +21,7 @@ type App() =
 
         match this.ApplicationLifetime with
         | :? IClassicDesktopStyleApplicationLifetime as desktop ->
-             desktop.MainWindow <- MainWindow(DataContext = MainWindowViewModel())
+            desktop.MainWindow <- MainWindow(DataContext = MainWindowViewModel())
         | _ -> ()
 
         base.OnFrameworkInitializationCompleted()

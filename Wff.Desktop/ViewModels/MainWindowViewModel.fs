@@ -7,6 +7,7 @@ open System
 
 type MainWindowViewModel() as self =
     inherit ViewModelBase()
+    //Backing fields
     let framerates = [ "Default"; "30"; "60"; "120" ]
     let audioBackends = [ "Default"; "Pipewire"; "PulseAudio"; "ALSA" ]
     let videoCodecs = Utils.ffmpeg.codecs Utils.ffmpeg.FfmpegCodecTarget.Video
@@ -15,7 +16,9 @@ type MainWindowViewModel() as self =
     let mutable audioCodec = audioCodecs.[0]
     let mutable videoCodec = videoCodecs.[0]
     let mutable framerate = framerates.[0]
+    let mutable region = "Screen"
     let mutable dmabuf = true
+    let mutable recordingDuration = ""
     let mutable damage = true
     let mutable audioBackend = audioBackends.[0]
     let mutable audioDevice = audioDevices.[0]
@@ -24,16 +27,19 @@ type MainWindowViewModel() as self =
 
     let mutable filename =
         let wffFolder =
-            System.IO.Path.Join(
-                [ Environment.GetFolderPath Environment.SpecialFolder.MyVideos
-                  "wff-recordings" ]
-                |> List.toArray
-            )
+            [ Environment.GetFolderPath Environment.SpecialFolder.MyVideos
+              "wff-recordings" ]
+            |> List.toArray
+            |> System.IO.Path.Join
 
         if System.IO.Directory.Exists wffFolder <> true then
             System.IO.Directory.CreateDirectory wffFolder |> ignore
 
-        System.IO.Path.Join([ wffFolder; "output.mkv" ] |> List.toArray)
+        [ wffFolder; "output.mkv" ] |> List.toArray |> System.IO.Path.Join
+
+    let timerElapsed (e: Timers.ElapsedEventArgs) =
+        if RecorderProcess.IsSome then
+            self.RecordingDuration <- RecorderProcess.Value.Stopwatch.Elapsed.ToString @"hh\:mm\:ss\:ff"
 
     let StartRecording (model: Utils.Recorder.WfrecorderDataModel) =
         let recorderProcess = Utils.Recorder.CreateRecorder model
@@ -43,7 +49,11 @@ type MainWindowViewModel() as self =
         | Error e -> printfn "%s" e
         | Ok _ ->
             self.IsRecording <- true
+            let timer = new System.Timers.Timer 100 //ms
+            timer.Start()
+            timer.Elapsed.Add timerElapsed
             printfn "Starting recording..."
+
 
     let StopRecording () =
         if self.IsRecording then
@@ -56,6 +66,32 @@ type MainWindowViewModel() as self =
                     rp.Dispose()
                     RecorderProcess <- None
                     printfn "Recording saved ...")
+
+    let TrySlurpSelectRegion () =
+        //Use slurp to capture a region of the screen
+        let _process = new System.Diagnostics.Process()
+
+        _process.StartInfo <-
+            System.Diagnostics.ProcessStartInfo(
+                FileName = "slurp", //TODO, need to check if slurp is installed before this is run
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+                UseShellExecute = false
+            )
+
+        _process.Start() |> ignore
+        _process.BeginOutputReadLine()
+
+        _process.OutputDataReceived.Add(fun data ->
+            data.Data
+            |> Option.ofObj
+            |> Option.iter (fun d ->
+                if d.Length > 0 then
+                    self.Region <- d))
+
+        _process.WaitForExit()
+
 
     member self.AudioDevices = Utils.ffmpeg.audioDevices
 
@@ -104,10 +140,24 @@ type MainWindowViewModel() as self =
         and set v = self.SetProperty(&recording, v) |> ignore
 
     member self.TryStartRecordingCommand =
-        CommunityToolkit.Mvvm.Input.RelayCommand(fun _ -> StartRecording(self.DataModel))
+        CommunityToolkit.Mvvm.Input.RelayCommand(fun _ -> StartRecording self.DataModel)
 
     member self.TryStopRecordingCommand =
         CommunityToolkit.Mvvm.Input.RelayCommand(fun _ -> StopRecording())
+
+    member self.TrySlurpSelectRegionCommand =
+        CommunityToolkit.Mvvm.Input.RelayCommand(fun _ -> TrySlurpSelectRegion())
+
+    member self.TrySelectScreenRegionCommand =
+        CommunityToolkit.Mvvm.Input.RelayCommand(fun _ -> self.Region <- "Screen")
+
+    member self.RecordingDuration
+        with get () = recordingDuration
+        and set v = self.SetProperty(&recordingDuration, v) |> ignore
+
+    member self.Region
+        with get () = region
+        and set v = self.SetProperty(&region, v) |> ignore
 
     member private self.DataModel: Utils.Recorder.WfrecorderDataModel =
         { Framerate = self.Framerate
@@ -116,5 +166,6 @@ type MainWindowViewModel() as self =
           AudioCodec = self.AudioCodec
           Dmabuf = self.Dmabuf
           Damage = self.Damage
+          Region = self.Region
           AudioBackend = self.AudioBackend
           AudioDevice = self.AudioDevice }

@@ -93,7 +93,14 @@
 
                 <Grid Grid.Row="7" ColumnDefinitions="*,*">
                     <TextBlock>Geometry</TextBlock>
-                    <Button Grid.Column="1" Content="Select" />
+                    <StackPanel Grid.Column="1" Orientation="Vertical">
+                        <StackPanel Orientation="Horizontal">
+                        <Button Command="{Binding TrySlurpSelectRegionCommand}" Content="Select Region" />
+                        <Button Command="{Binding TrySelectScreenRegionCommand}" Content="Whole Screen"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding Region}" />
+                    </StackPanel>
+
                 </Grid>
 
                 <Grid Grid.Row="8" ColumnDefinitions="*,*">
@@ -135,10 +142,10 @@
         </ScrollViewer>
 
         <Grid Grid.Row="1">
-            <Button
-                Command="{Binding TryStopRecordingCommand}"
-                Content="Stop Recording"
-                IsVisible="{Binding IsRecording}" />
+            <StackPanel IsVisible="{Binding IsRecording}" Orientation="Vertical">
+                <Button Command="{Binding TryStopRecordingCommand}" Content="Stop Recording" />
+                <TextBlock Text="{Binding RecordingDuration}" />
+            </StackPanel>
             <Button
                 Command="{Binding TryStartRecordingCommand}"
                 Content="Start Recording"
