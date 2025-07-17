@@ -37,6 +37,7 @@
       <PrivateAssets Condition="'$(Configuration)' != 'Debug'">All</PrivateAssets>
     </PackageReference>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1" />
+    <PackageReference Include="fluentavaloniaui" Version="2.3.0" />
     <PackageReference Include="SukiUI" Version="6.0.2" />
   </ItemGroup>
 </Project>
