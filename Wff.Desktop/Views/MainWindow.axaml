@@ -2,20 +2,29 @@
     x:Class="Wff.Views.MainWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:converter="using:Wff.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vm="using:Wff.ViewModels"
     Title="Wff"
     Width="400"
     Height="450"
-    MaxWidth="400"
-    MaxHeight="450"
     d:DesignHeight="450"
     d:DesignWidth="400"
     x:DataType="vm:MainWindowViewModel"
     Icon="/Assets/avalonia-logo.ico"
     mc:Ignorable="d">
+    <Window.Styles>
+        <Style Selector="Window">
+            <Setter Property="Background" Value="#040216" />
+        </Style>
 
+    </Window.Styles>
+    <Window.Resources>
+        <converter:StringEqualConverter x:Key="StringEqual" />
+        <converter:StringNotEqualConverter x:Key="StringNotEqual" />
+        <converter:RegionContentConverter x:Key="RegionContentConverter" />
+    </Window.Resources>
     <Design.DataContext>
         <!--
             This only sets the DataContext for the previewer in an IDE,
@@ -24,55 +33,74 @@
         <vm:MainWindowViewModel />
     </Design.DataContext>
 
-    <StackPanel Margin="5">
-        <TextBlock
-            Grid.Column="0"
-            HorizontalAlignment="Center"
-            FontSize="25"
-            FontWeight="Bold"
-            Text="Wff Screen Recorder" />
+    <ScrollViewer>
+        <StackPanel Margin="5">
+            <TextBlock
+                Grid.Column="0"
+                HorizontalAlignment="Center"
+                FontSize="25"
+                FontWeight="Bold"
+                Text="Wff Screen Recorder" />
 
-        <StackPanel Margin="25">
-            <StackPanel.Styles>
-                <Style Selector="ComboBox,Button,Expander">
-                    <Setter Property="HorizontalAlignment" Value="Stretch" />
-                    <Setter Property="Margin" Value="0,5,0,0" />
-                </Style>
-                <Style Selector="TextBlock.seperator">
-                    <Setter Property="Margin" Value="0,20,0,0" />
-                </Style>
-            </StackPanel.Styles>
-            <TextBlock Text="Video Settings" />
-            <ComboBox SelectedIndex="0">
-                <ComboBoxItem>Screen</ComboBoxItem>
-                <ComboBoxItem>Region</ComboBoxItem>
-            </ComboBox>
-            <ComboBox SelectedIndex="0">
-                <ComboBoxItem>eDP-1</ComboBoxItem>
-                <ComboBoxItem>HDMI-A-1</ComboBoxItem>
-            </ComboBox>
+            <StackPanel Margin="25">
+                <StackPanel.Styles>
+                    <Style Selector="ComboBox,Button,Expander">
+                        <Setter Property="HorizontalAlignment" Value="Stretch" />
+                        <Setter Property="Margin" Value="0,5,0,0" />
+                        <Setter Property="Background" Value="Transparent" />
+                        <Setter Property="BorderThickness" Value="2" />
+                        <Setter Property="CornerRadius" Value="5" />
+                        <Setter Property="Padding" Value="15" />
+                    </Style>
+                    <Style Selector="TextBlock.seperator">
+                        <Setter Property="Margin" Value="0,20,0,0" />
+                    </Style>
+                </StackPanel.Styles>
+                <TextBlock Text="Video Settings" />
+                <Grid ColumnDefinitions="*,*">
+                    <Button
+                        Classes.accent="{Binding Region, Converter={StaticResource StringEqual}, ConverterParameter='Screen'}"
+                        Command="{Binding TrySelectScreenRegionCommand}"
+                        Content="Screen" />
+                    <Button
+                        Grid.Column="1"
+                        Classes.accent="{Binding Region, Converter={StaticResource StringNotEqual}, ConverterParameter='Screen'}"
+                        Command="{Binding TrySlurpSelectRegionCommand}">
+                        <Button.Content>
+                            <!--Don't even need a multibinding here-->
+                            <MultiBinding Converter="{StaticResource RegionContentConverter}">
+                                <Binding Path="Region" />
+                                <Binding
+                                    Converter="{StaticResource StringNotEqual}"
+                                    ConverterParameter="Screen"
+                                    Path="Region" />
+                            </MultiBinding>
+                        </Button.Content>
+                    </Button>
+                </Grid>
+                <ComboBox SelectedIndex="0">
+                    <ComboBoxItem>eDP-1</ComboBoxItem>
+                    <ComboBoxItem>HDMI-A-1</ComboBoxItem>
+                </ComboBox>
 
-            <TextBlock Classes="seperator" Text="Recording Settings" />
-            <ComboBox SelectedIndex="0">
-                <ComboBoxItem>None</ComboBoxItem>
-                <ComboBoxItem>mmpeg</ComboBoxItem>
-            </ComboBox>
+                <TextBlock Classes="seperator" Text="Recording Settings" />
+                <ComboBox SelectedIndex="0">
+                    <ComboBoxItem>None</ComboBoxItem>
+                    <ComboBoxItem>mmpeg</ComboBoxItem>
+                </ComboBox>
 
-            <Button Content="Filename" />
-            <Expander>
-                <Expander.Header>
-                    Advanced Options
-                </Expander.Header>
-            </Expander>
+                <Button Content="Filename" />
+                <Expander>
+                    <Expander.Header>
+                        Advanced Options
+                    </Expander.Header>
+                </Expander>
 
-            <Button
-                Height="50"
-                Content="Start Recording"
-                CornerRadius="10"
-                FontSize="20" />
+                <Button Content="Start Recording" FontSize="20" />
+            </StackPanel>
+
         </StackPanel>
-
-    </StackPanel>
+    </ScrollViewer>
     <!--  Will fix this  -->
     <!--<Grid RowDefinitions="400,Auto">
         <ScrollViewer>
