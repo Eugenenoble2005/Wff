@@ -1,4 +1,7 @@
+//ffmpeg, pactl and wl-randr commands
 module Utils.ffmpeg
+
+open System.Text.Json
 
 open System.Diagnostics
 
@@ -78,3 +81,43 @@ let codecs target =
         p.BeginOutputReadLine()
         p.WaitForExit()
         codecs
+
+let outputs =
+    let command = "wlr-randr"
+
+    let _process =
+        Process.Start(
+            ProcessStartInfo(
+                FileName = command,
+                Arguments = "--json",
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            )
+        )
+
+    let mutable outputs: string list = []
+
+    _process.OutputDataReceived.Add(fun (args) ->
+        args.Data
+        |> Option.ofObj
+        |> Option.iter (fun data ->
+            printfn "%s" data
+            let doc = JsonDocument.Parse(data)
+
+            let names =
+                doc.RootElement.EnumerateArray()
+                |> Seq.map (fun elem -> elem.GetProperty("name").GetString())
+                |> Seq.choose (fun elem -> elem |> Option.ofObj)
+                |> Seq.toList
+
+            outputs <- outputs @ names))
+
+    match _process with
+    | null -> [ "eDP-1" ] //Should never happen , i don't even know why it's a thing
+    | p ->
+        p.Start() |> ignore
+        p.BeginOutputReadLine()
+        p.WaitForExit()
+        outputs

@@ -102,6 +102,7 @@ type MainWindowViewModel() as self =
     member self.Framerates = framerates
 
     member self.AudioBackends = audioBackends
+    member self.Outputs = Utils.ffmpeg.outputs
 
     member self.Filename
         with get () = filename
