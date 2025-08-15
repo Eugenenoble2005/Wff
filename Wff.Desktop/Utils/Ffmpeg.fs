@@ -82,6 +82,9 @@ let codecs target =
         p.WaitForExit()
         codecs
 
+//only the output name is needed
+type RandrOutput = {name:string}
+
 let outputs =
     let command = "wlr-randr"
 
@@ -98,26 +101,27 @@ let outputs =
         )
 
     let mutable outputs: string list = []
-
-    _process.OutputDataReceived.Add(fun (args) ->
-        args.Data
-        |> Option.ofObj
-        |> Option.iter (fun data ->
-            printfn "%s" data
-            let doc = JsonDocument.Parse(data)
-
-            let names =
-                doc.RootElement.EnumerateArray()
-                |> Seq.map (fun elem -> elem.GetProperty("name").GetString())
-                |> Seq.choose (fun elem -> elem |> Option.ofObj)
-                |> Seq.toList
-
-            outputs <- outputs @ names))
-
+    let buffer = new System.Text.StringBuilder()
+    _process.OutputDataReceived.Add(fun sender ->
+        sender.Data |> Option.ofObj |>Option.iter (fun data ->
+            buffer.AppendLine data |> ignore
+        )
+    )
+    _process.Exited.Add(fun _ ->
+        let randrObj = JsonSerializer.Deserialize<List<RandrOutput>> (buffer.ToString())
+        match randrObj with
+            |null -> ()
+            | o ->
+                o |> Seq.iter (fun output ->
+                    outputs <- outputs @ [output.name]    
+                )
+    )
     match _process with
-    | null -> [ "eDP-1" ] //Should never happen , i don't even know why it's a thing
-    | p ->
-        p.Start() |> ignore
-        p.BeginOutputReadLine()
-        p.WaitForExit()
-        outputs
+        |null -> ["DP-1"]
+        | p ->
+            p.EnableRaisingEvents <- true
+            p.Start() |> ignore
+            p.BeginOutputReadLine()
+            p.WaitForExit()
+            outputs
+
