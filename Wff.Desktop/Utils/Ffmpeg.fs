@@ -100,7 +100,8 @@ let outputs =
             )
         )
 
-    let mutable outputs: string list = []
+    let mutable outputs = []
+    let lock = new System.Threading.ManualResetEventSlim false
     let buffer = new System.Text.StringBuilder()
     _process.OutputDataReceived.Add(fun sender ->
         sender.Data |> Option.ofObj |>Option.iter (fun data ->
@@ -113,15 +114,18 @@ let outputs =
             |null -> ()
             | o ->
                 o |> Seq.iter (fun output ->
+                    printfn "%s" output.name
                     outputs <- outputs @ [output.name]    
                 )
+        lock.Set() |> ignore
     )
     match _process with
-        |null -> ["DP-1"]
+        |null -> ["eDP-1"]
         | p ->
             p.EnableRaisingEvents <- true
             p.Start() |> ignore
             p.BeginOutputReadLine()
             p.WaitForExit()
+            lock.Wait()
             outputs
 

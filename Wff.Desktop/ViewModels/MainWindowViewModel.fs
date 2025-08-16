@@ -1,6 +1,9 @@
 ﻿namespace Wff.ViewModels
+open Utils
 
 open CommunityToolkit.Mvvm
+open Avalonia
+open Avalonia.Platform.Storage
 open System.Threading.Tasks
 open System.Collections.Generic
 open System
@@ -13,6 +16,8 @@ type MainWindowViewModel() as self =
     let videoCodecs = Utils.ffmpeg.codecs Utils.ffmpeg.FfmpegCodecTarget.Video
     let audioCodecs = Utils.ffmpeg.codecs Utils.ffmpeg.FfmpegCodecTarget.Audio
     let audioDevices = Utils.ffmpeg.audioDevices
+    let outputs = Utils.ffmpeg.outputs
+    let mutable WAYLAND_DISPLAY = None
     let mutable audioCodec = audioCodecs.[0]
     let mutable videoCodec = videoCodecs.[0]
     let mutable framerate = framerates.[0]
@@ -25,7 +30,7 @@ type MainWindowViewModel() as self =
     let mutable RecorderProcess: Utils.Recorder.RecorderProcess option = None
     let mutable recording = false
 
-    let mutable filename =
+    let mutable filename :string  =
         let wffFolder =
             [ Environment.GetFolderPath Environment.SpecialFolder.MyVideos
               "wff-recordings" ]
@@ -34,8 +39,8 @@ type MainWindowViewModel() as self =
 
         if System.IO.Directory.Exists wffFolder <> true then
             System.IO.Directory.CreateDirectory wffFolder |> ignore
-
-        [ wffFolder; "output.mkv" ] |> List.toArray |> System.IO.Path.Join
+        let ts = DateTime.Now.ToString("yyyyMMdd_HHmmss")
+        [ wffFolder; $"{ts}output.mkv" ] |> List.toArray |> System.IO.Path.Join
 
     let timerElapsed (e: Timers.ElapsedEventArgs) =
         if RecorderProcess.IsSome then
@@ -55,6 +60,38 @@ type MainWindowViewModel() as self =
             printfn "Starting recording..."
 
 
+    let SaveFileDialog() =
+        printfn "initial %s" (Environment.GetEnvironmentVariable("WAYLAND_DISPLAY") |>Option.ofObj |> Option.defaultValue "f")
+
+        //capture the wayland display before it is overwritten by the portal
+        let wayland_display = Environment.GetEnvironmentVariable("WAYLAND_DISPLAY") |> Option.ofObj
+        match Application.Current with
+        | null -> ()
+        | app ->
+            match app.ApplicationLifetime with
+            | :? Controls.ApplicationLifetimes.IClassicDesktopStyleApplicationLifetime as desktop ->
+                match desktop.MainWindow with
+                | null -> ()
+                | mainWindow ->
+                    let saveFileAsync = async {
+                        let options = FilePickerSaveOptions()
+                        options.SuggestedFileName <- System.IO.Path.GetFileName(self.Filename:string)                  
+                        options.ShowOverwritePrompt <- true
+                        options.Title <- "Save Recording"
+                        let! file = mainWindow.StorageProvider.SaveFilePickerAsync options |> Async.AwaitTask
+                        match file with
+                        | null -> ()
+                        | f -> self.Filename <- f.Path.AbsolutePath
+                        //restore Environment
+                        match WAYLAND_DISPLAY, wayland_display with
+                            | (None, Some wd) ->
+                                Environment.SetEnvironmentVariable("WAYLAND_DISPLAY", wd)
+                            | _ ->()
+                        printfn "final %s" (Environment.GetEnvironmentVariable("WAYLAND_DISPLAY") |>Option.ofObj |> Option.defaultValue "null")
+                    }
+                    Async.StartImmediate saveFileAsync
+            | _ -> ()        
+
     let StopRecording () =
         if self.IsRecording then
             RecorderProcess
@@ -70,7 +107,6 @@ type MainWindowViewModel() as self =
     let TrySlurpSelectRegion () =
         //Use slurp to capture a region of the screen
         let _process = new System.Diagnostics.Process()
-
         _process.StartInfo <-
             System.Diagnostics.ProcessStartInfo(
                 FileName = "slurp", //TODO, need to check if slurp is installed before this is run
@@ -84,14 +120,18 @@ type MainWindowViewModel() as self =
         _process.BeginOutputReadLine()
 
         _process.OutputDataReceived.Add(fun data ->
+            printfn "trying to run command"
             data.Data
             |> Option.ofObj
             |> Option.iter (fun d ->
+                printfn "%s" d
                 if d.Length > 0 then
                     self.Region <- d))
+        _process.ErrorDataReceived.Add(fun e ->
+            printfn "recieved error %s" e.Data
+        )
 
         _process.WaitForExit()
-
 
     member self.AudioDevices = Utils.ffmpeg.audioDevices
 
@@ -102,7 +142,7 @@ type MainWindowViewModel() as self =
     member self.Framerates = framerates
 
     member self.AudioBackends = audioBackends
-    member self.Outputs = Utils.ffmpeg.outputs
+    member self.Outputs = outputs
 
     member self.Filename
         with get () = filename
@@ -152,6 +192,9 @@ type MainWindowViewModel() as self =
     member self.TrySelectScreenRegionCommand =
         CommunityToolkit.Mvvm.Input.RelayCommand(fun _ -> self.Region <- "Screen")
 
+    member self.SelectFile =
+        CommunityToolkit.Mvvm.Input.RelayCommand(fun _ -> SaveFileDialog())
+
     member self.RecordingDuration
         with get () = recordingDuration
         and set v = self.SetProperty(&recordingDuration, v) |> ignore
@@ -170,3 +213,4 @@ type MainWindowViewModel() as self =
           Region = self.Region
           AudioBackend = self.AudioBackend
           AudioDevice = self.AudioDevice }
+
