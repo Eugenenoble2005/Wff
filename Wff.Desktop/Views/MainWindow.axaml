@@ -93,7 +93,10 @@
                 <Grid Grid.Row="1">
                     <StackPanel IsVisible="{Binding IsRecording}" Orientation="Vertical">
                         <Button Command="{Binding TryStopRecordingCommand}" Content="Stop Recording" />
-                        <TextBlock Text="{Binding RecordingDuration}" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            Text="{Binding RecordingDuration}"
+                            TextAlignment="Center" />
                     </StackPanel>
                     <Button
                         Command="{Binding TryStartRecordingCommand}"

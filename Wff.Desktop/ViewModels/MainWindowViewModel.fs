@@ -61,10 +61,8 @@ type MainWindowViewModel() as self =
 
 
     let SaveFileDialog() =
-        printfn "initial %s" (Environment.GetEnvironmentVariable("WAYLAND_DISPLAY") |>Option.ofObj |> Option.defaultValue "f")
-
         //capture the wayland display before it is overwritten by the portal
-        let wayland_display = Environment.GetEnvironmentVariable("WAYLAND_DISPLAY") |> Option.ofObj
+        let wayland_display = Environment.GetEnvironmentVariable("WAYLAND_DISPLAY")
         match Application.Current with
         | null -> ()
         | app ->
@@ -83,11 +81,10 @@ type MainWindowViewModel() as self =
                         | null -> ()
                         | f -> self.Filename <- f.Path.AbsolutePath
                         //restore Environment
-                        match WAYLAND_DISPLAY, wayland_display with
-                            | (None, Some wd) ->
-                                Environment.SetEnvironmentVariable("WAYLAND_DISPLAY", wd)
-                            | _ ->()
-                        printfn "final %s" (Environment.GetEnvironmentVariable("WAYLAND_DISPLAY") |>Option.ofObj |> Option.defaultValue "null")
+                        maybe {
+                            let! var = wayland_display
+                            Environment.SetEnvironmentVariable("WAYLAND_DISPLAY", var)
+                        } |> ignore
                     }
                     Async.StartImmediate saveFileAsync
             | _ -> ()        
