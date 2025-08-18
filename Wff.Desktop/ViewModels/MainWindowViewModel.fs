@@ -5,6 +5,7 @@ open CommunityToolkit.Mvvm
 open Avalonia
 open Avalonia.Platform.Storage
 open System.Threading.Tasks
+open Utils.Recorder
 open System.Collections.Generic
 open System
 
@@ -22,6 +23,7 @@ type MainWindowViewModel() as self =
     let mutable audioCodec = audioCodecs.[0]
     let mutable videoCodec = videoCodecs.[0]
     let mutable framerate = framerates.[0]
+    let mutable cancelledDuringCountdown = false
     let mutable region = "Screen"
     let mutable delay = 0
     let mutable dmabuf = true
@@ -30,6 +32,7 @@ type MainWindowViewModel() as self =
     let mutable audioBackend = audioBackends.[0]
     let mutable audioDevice = audioDevices.[0]
     let mutable RecorderProcess: Utils.Recorder.RecorderProcess option = None
+    let mutable CountdownProcess = None
     let mutable recording = false
 
     let mutable filename :string  =
@@ -50,6 +53,7 @@ type MainWindowViewModel() as self =
 
     let StartCountdownAsync() = async {      
             let _process = new System.Diagnostics.Process()
+            CountdownProcess <- Some _process;
             let countdownExe = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"countdown")
             _process.StartInfo <-
                 System.Diagnostics.ProcessStartInfo(
@@ -66,19 +70,21 @@ type MainWindowViewModel() as self =
             do! _process.WaitForExitAsync() |> Async.AwaitTask
         }
     let StartRecording (model: Utils.Recorder.WfrecorderDataModel) = async {
+        self.IsRecording <- true
+        cancelledDuringCountdown <- false
         if self.Delay > 0 then
-            do! StartCountdownAsync()
-        let recorderProcess = Utils.Recorder.CreateRecorder model
-        RecorderProcess <- Some recorderProcess
-
-        match recorderProcess.Start with
-        | Error e -> printfn "%s" e
-        | Ok _ ->
-            self.IsRecording <- true
-            let timer = new System.Timers.Timer 100 //ms
-            timer.Start()
-            timer.Elapsed.Add timerElapsed
-            printfn "Starting recording..."
+            do! StartCountdownAsync() //will block till countdown is complete
+        if cancelledDuringCountdown <> true then
+            let recorderProcess = Utils.Recorder.CreateRecorder model
+            CountdownProcess <- None
+            RecorderProcess <- Some recorderProcess
+            match recorderProcess.Start with
+            | Error e -> printfn "%s" e
+            | Ok _ ->
+                let timer = new System.Timers.Timer 100 //ms
+                timer.Start()
+                timer.Elapsed.Add timerElapsed
+                printfn "Starting recording..."
         } 
     let SaveFileDialog() =
         //capture the wayland display before it is overwritten by the portal
@@ -110,16 +116,24 @@ type MainWindowViewModel() as self =
             | _ -> ()        
 
     let StopRecording () =
+        //stop a recorder process along with a countdown process if they exist
         if self.IsRecording then
-            RecorderProcess
-            |> Option.iter (fun rp ->
-                match rp.Stop with
-                | Error e -> printfn "%s" e
-                | Ok _ ->
-                    self.IsRecording <- false
-                    rp.Dispose()
-                    RecorderProcess <- None
-                    printfn "Recording saved ...")
+            match CountdownProcess with
+                | None -> ()
+                | Some p ->
+                    cancelledDuringCountdown <- true
+                    p.Signal 2 |> ignore
+                    CountdownProcess <- None
+            match RecorderProcess with
+                | None -> ()
+                | Some rp ->                
+                    match rp.Stop with
+                    | Error e -> printfn "%s" e
+                    | Ok _ ->
+                        rp.Dispose()
+                        RecorderProcess <- None
+                        printfn "Recording saved ..."
+            self.IsRecording <- false
 
     let TrySlurpSelectRegion () =
         //Use slurp to capture a region of the screen
