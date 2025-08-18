@@ -17,11 +17,13 @@ type MainWindowViewModel() as self =
     let audioCodecs = Utils.ffmpeg.codecs Utils.ffmpeg.FfmpegCodecTarget.Audio
     let audioDevices = Utils.ffmpeg.audioDevices
     let outputs = Utils.ffmpeg.outputs
+    let mutable output = outputs.[0];
     let mutable WAYLAND_DISPLAY = None
     let mutable audioCodec = audioCodecs.[0]
     let mutable videoCodec = videoCodecs.[0]
     let mutable framerate = framerates.[0]
     let mutable region = "Screen"
+    let mutable delay = 0
     let mutable dmabuf = true
     let mutable recordingDuration = ""
     let mutable damage = true
@@ -46,7 +48,26 @@ type MainWindowViewModel() as self =
         if RecorderProcess.IsSome then
             self.RecordingDuration <- RecorderProcess.Value.Stopwatch.Elapsed.ToString @"hh\:mm\:ss\:ff"
 
-    let StartRecording (model: Utils.Recorder.WfrecorderDataModel) =
+    let StartCountdownAsync() = async {      
+            let _process = new System.Diagnostics.Process()
+            let countdownExe = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory,"countdown")
+            _process.StartInfo <-
+                System.Diagnostics.ProcessStartInfo(
+                    FileName = countdownExe, 
+                    Arguments = $"{self.Output} {self.Delay}",
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                )
+
+            _process.Start() |> ignore
+            _process.BeginOutputReadLine()
+            do! _process.WaitForExitAsync() |> Async.AwaitTask
+        }
+    let StartRecording (model: Utils.Recorder.WfrecorderDataModel) = async {
+        if self.Delay > 0 then
+            do! StartCountdownAsync()
         let recorderProcess = Utils.Recorder.CreateRecorder model
         RecorderProcess <- Some recorderProcess
 
@@ -58,8 +79,7 @@ type MainWindowViewModel() as self =
             timer.Start()
             timer.Elapsed.Add timerElapsed
             printfn "Starting recording..."
-
-
+        } 
     let SaveFileDialog() =
         //capture the wayland display before it is overwritten by the portal
         let wayland_display = Environment.GetEnvironmentVariable("WAYLAND_DISPLAY")
@@ -178,7 +198,7 @@ type MainWindowViewModel() as self =
         and set v = self.SetProperty(&recording, v) |> ignore
 
     member self.TryStartRecordingCommand =
-        CommunityToolkit.Mvvm.Input.RelayCommand(fun _ -> StartRecording self.DataModel)
+        CommunityToolkit.Mvvm.Input.RelayCommand(fun _ -> StartRecording self.DataModel |> Async.Start)
 
     member self.TryStopRecordingCommand =
         CommunityToolkit.Mvvm.Input.RelayCommand(fun _ -> StopRecording())
@@ -200,9 +220,18 @@ type MainWindowViewModel() as self =
         with get () = region
         and set v = self.SetProperty(&region, v) |> ignore
 
+    member self.Delay
+        with get() = delay
+        and set v = self.SetProperty(&delay, v) |> ignore
+
+    member self.Output
+        with get() = output
+        and set v = self.SetProperty(&output, v) |> ignore
+
     member private self.DataModel: Utils.Recorder.WfrecorderDataModel =
         { Framerate = self.Framerate
           Filename = self.Filename
+          Output = self.Output  
           VideoCodec = self.VideoCodec
           AudioCodec = self.AudioCodec
           Dmabuf = self.Dmabuf

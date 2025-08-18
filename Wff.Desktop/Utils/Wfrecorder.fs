@@ -13,6 +13,7 @@ type System.Diagnostics.Process with
 type WfrecorderDataModel =
     { Filename: string
       Framerate: string
+      Output: string    
       VideoCodec: string
       Region: string
       AudioCodec: string
@@ -24,6 +25,7 @@ type WfrecorderDataModel =
 let private RecorderCommand (dataModel: WfrecorderDataModel) =
     let parts =
         [ " --overwrite"
+          $"--output {dataModel.Output}"  
           $" -f {dataModel.Filename}"
           if dataModel.Framerate <> "Default" then
               $" --framerate {dataModel.Framerate}"

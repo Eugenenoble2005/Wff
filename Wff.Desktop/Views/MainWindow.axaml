@@ -43,7 +43,7 @@
 
             <StackPanel Margin="25">
                 <StackPanel.Styles>
-                    <Style Selector="ComboBox,Button,Expander">
+                    <Style Selector="ComboBox,Button,Expander,NumericUpDown">
                         <Setter Property="HorizontalAlignment" Value="Stretch" />
                         <Setter Property="Margin" Value="0,5,0,0" />
                         <Setter Property="Background" Value="Transparent" />
@@ -83,13 +83,21 @@
                     ItemsSource="{Binding AudioDevices}"
                     SelectedIndex="0"
                     SelectedItem="{Binding AudioDevice}" />
-
                 <Button Command="{Binding SelectFile}" Content="{Binding Filename}" />
                 <Expander>
                     <Expander.Header>
                         Advanced Options
                     </Expander.Header>
                 </Expander>
+                <StackPanel>
+                    <TextBlock>Delay</TextBlock>
+                    <NumericUpDown
+                        Maximum="30"
+                        Minimum="0"
+                        FormatString="0"
+                        Increment="1"
+                        Value="{Binding Delay}" />
+                </StackPanel>
                 <Grid Grid.Row="1">
                     <StackPanel IsVisible="{Binding IsRecording}" Orientation="Vertical">
                         <Button Command="{Binding TryStopRecordingCommand}" Content="Stop Recording" />

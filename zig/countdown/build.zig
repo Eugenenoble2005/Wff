@@ -7,6 +7,9 @@ pub fn build(b: *std.Build) void {
     const exe = b.addExecutable(.{ .name = "countdown", .target = target, .optimize = optimize, .root_source_file = b.path("main.zig") });
     const run_step = b.step("run", "Run countown");
     const run_exe = b.addRunArtifact(exe);
+    if (b.args) |args| {
+        run_exe.addArgs(args);
+    }
     run_step.dependOn(&run_exe.step);
 
     //wayland stuff

@@ -4,6 +4,8 @@
     <TargetFramework>net9.0</TargetFramework>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <Nullable>enable</Nullable>
+    <ZigCountdownProject>../zig/countdown</ZigCountdownProject>
+    <ZigCountdownExecutable>$(ZigCountdownProject)/zig-out/bin/countdown</ZigCountdownExecutable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>
@@ -12,6 +14,18 @@
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
+
+  <Target Name="BuildZigCountdown" BeforeTargets="Build">
+    <Message Text="Building Zig Countdown" Importance = "High"/>
+    <Exec Command = "zig build --release=fast" WorkingDirectory="$(ZigCountdownProject)" ContinueOnError="false"/>
+  </Target>
+
+  <Target Name="CopyZigCountdownBinary" AfterTargets="Build">
+    <ItemGroup>
+      <ZigBinary Include="$(ZigCountdownExecutable)" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ZigBinary)" DestinationFolder="$(OutputPath)" />
+  </Target>
 
   <ItemGroup>
     <Compile Include="Utils\Util.fs" />

@@ -30,7 +30,7 @@ let audioDevices =
                 audio_devices <- audio_devices @ [ data.Split("Name:").[1] ]))
 
     match _process with
-    | null -> audio_devices //Should never happen , i don't even know why it's a thing
+    | null -> audio_devices 
     | p ->
         p.Start() |> ignore
         p.BeginOutputReadLine()

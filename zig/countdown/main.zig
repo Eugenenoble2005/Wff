@@ -15,10 +15,14 @@ output: ?*Output = null,
 targetName: []const u8,
 duration: u16,
 fn connect() !void {
+    //we can expect the GUI to always supply correct args
+    const argv = std.os.argv;
+    const output_name = std.mem.span(argv[1]);
+    const duration = try std.fmt.parseInt(u16, std.mem.span(argv[2]), 10);
     var state: State = .{
         .display = wl.Display.connect(null) catch die("Could not connect to wayland compositor"),
-        .duration = 12,
-        .targetName = "eDP-1",
+        .duration = duration,
+        .targetName = output_name,
     };
     const registy = try state.display.getRegistry();
     registy.setListener(*State, registryListener, &state);
@@ -92,6 +96,7 @@ const Output = struct {
             .description => {},
             .done => {
                 if (output.selected == false) {
+                    //if this output was not used, there's no need keeping it around
                     gpa.destroy(output);
                     return;
                 }
@@ -144,15 +149,14 @@ const Output = struct {
         output.wlSurface.?.damageBuffer(0, 0, @intCast(output.width), @intCast(output.height));
         output.wlSurface.?.commit();
         _ = output.state.display.flush();
-        
+
         //crude recursion based timer, maybe timer_fd here? I'm too lazy
+        std.Thread.sleep(1 * std.time.ns_per_s);
         if (number > 1) {
-            std.Thread.sleep(1 * std.time.ns_per_s);
             _ = output.state.display.flush();
             try output.showCountdown(number - 1);
         } else {
             //exit gracefully, we've done our job
-            std.Thread.sleep(1 * std.time.ns_per_s);
             std.posix.exit(0);
         }
     }
