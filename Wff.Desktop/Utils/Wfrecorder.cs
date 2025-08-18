@@ -38,20 +38,20 @@ public static class Wfrecorder
     {
         List<string> parts = new() {
             "--overwrite",
-            $"--output {dataModel.Output}",
+            $"--output={dataModel.Output}",
             $"-f {dataModel.Filename}",
         };
         if (dataModel.Framerate != "Default")
         {
-            parts.Add($"--framerate {dataModel.Framerate}");
+            parts.Add($"--framerate={dataModel.Framerate}");
         }
         if (dataModel.VideoCodec != "Default")
         {
-            parts.Add($"--codec {dataModel.VideoCodec}");
+            parts.Add($"--codec={dataModel.VideoCodec}");
         }
         if (dataModel.AudioCodec != "Default")
         {
-            parts.Add($"--audio-codec {dataModel.AudioCodec}");
+            parts.Add($"--audio-codec={dataModel.AudioCodec}");
         }
         if (dataModel.Dmabuf != true)
         {
@@ -67,11 +67,11 @@ public static class Wfrecorder
         }
         if (dataModel.AudioBackend != "Default")
         {
-            parts.Add($"--audio-backend {dataModel.AudioBackend}");
+            parts.Add($"--audio-backend={dataModel.AudioBackend}");
         }
         if (dataModel.AudioDevice != "None")
         {
-            parts.Add($"--audio {dataModel.AudioDevice}");
+            parts.Add($"--audio={dataModel.AudioDevice}");
         }
         return string.Join(" ", parts);
     }

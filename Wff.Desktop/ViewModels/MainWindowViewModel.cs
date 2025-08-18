@@ -39,7 +39,7 @@ public partial class MainWindowViewModel : ViewModelBase
     {
         if (recorderProcess is not null)
         {
-            RecordingDuration = recorderProcess.stopwatch.Elapsed.ToString(@"hh\:mm\ss\:ff");
+            RecordingDuration = recorderProcess.stopwatch.Elapsed.ToString(@"hh\:mm\:ss\:ff");
         }
     }
 
@@ -59,11 +59,9 @@ public partial class MainWindowViewModel : ViewModelBase
             UseShellExecute = false
         };
         if (process is null) return;
-        Console.WriteLine("triggeting the countdown");
         process.Start();
         process.BeginOutputReadLine();
         await process.WaitForExitAsync();
-        Console.WriteLine("countdown ended");
     }
 
     public async void StartRecordingAsync()
@@ -72,9 +70,7 @@ public partial class MainWindowViewModel : ViewModelBase
         cancelledDuringCountdown = false;
         if (Delay > 0)
         {
-            Console.WriteLine("has a dley");
             await StartCountdownAsync();
-            Console.WriteLine("this should not show till after the counrdown");
         } //will block till countdown is complete
 
         if (cancelledDuringCountdown) return;
@@ -190,6 +186,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     public void Init()
     {
+        //TODO: make async
         AudioDevices = new(Utils.Ffmpeg.AudioDevices());
         AudioCodecs = new(Utils.Ffmpeg.Codecs(Utils.FfmpegCodecTarget.Audio));
         VideoCodecs = new(Utils.Ffmpeg.Codecs(Utils.FfmpegCodecTarget.Video));

@@ -49,7 +49,7 @@
                 HorizontalAlignment="Center"
                 FontSize="25"
                 FontWeight="Bold"
-                Text="Wff Screen Recorder" />
+                Text="Screen Recorder" />
 
             <StackPanel Margin="25">
                 <StackPanel.Styles>

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Wff
+Comment=Simple GUI screen recorder based on wf-recorder.
+Exec=wff
+Terminal=false
+Type=Application
+Categories=Development
+GenericName=Wff
+Keywords=Screen recorder; wff ; recorder, screenshot
