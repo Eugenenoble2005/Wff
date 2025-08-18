@@ -120,7 +120,7 @@ const Output = struct {
         defer input_region.destroy();
         surface.setInputRegion(input_region);
         const layerSurface = try layerShell.getLayerSurface(surface, output.wlOutput, .overlay, "countdown");
-        layerSurface.setSize(100, 100);
+        layerSurface.setSize(300, 300);
         layerSurface.setAnchor(.{ .top = true, .right = true });
         layerSurface.setExclusiveZone(-1);
         layerSurface.setListener(*Output, layerSurfaceListener, output);
@@ -138,18 +138,17 @@ const Output = struct {
         cairo.cairo_set_operator(cr, cairo.CAIRO_OPERATOR_CLEAR);
         cairo.cairo_paint(cr);
         cairo.cairo_set_operator(cr, cairo.CAIRO_OPERATOR_OVER);
-        cairo.cairo_set_source_rgba(cr, 1.0, 1.0, 1.0, 1.0);
-        cairo.cairo_select_font_face(cr, "Sans", cairo.CAIRO_FONT_SLANT_NORMAL, cairo.CAIRO_FONT_WEIGHT_BOLD);
-        cairo.cairo_set_font_size(cr, 60.0);
+        cairo.cairo_set_source_rgba(cr, 1.0, 0.0, 0.0, 1.0);
+        cairo.cairo_select_font_face(cr, "Arial Black", cairo.CAIRO_FONT_SLANT_ITALIC, cairo.CAIRO_FONT_WEIGHT_BOLD);
+        cairo.cairo_set_font_size(cr, 70.0);
         const x_coord = output.width - 100;
         cairo.cairo_move_to(cr, @as(f64, @floatFromInt(x_coord)), 50.0);
         cairo.cairo_show_text(cr, @ptrCast(text));
-
         output.wlSurface.?.attach(poolBuffer.wlBuffer, 0, 0);
         output.wlSurface.?.damageBuffer(0, 0, @intCast(output.width), @intCast(output.height));
         output.wlSurface.?.commit();
         _ = output.state.display.flush();
-
+        
         //crude recursion based timer, maybe timer_fd here? I'm too lazy
         std.Thread.sleep(1 * std.time.ns_per_s);
         if (number > 1) {
@@ -167,7 +166,7 @@ const Output = struct {
                 output.height = c.height;
                 output.layerSurface.?.ackConfigure(c.serial);
                 output.poolBuffer = PoolBuffer.new(output) catch return;
-                //parse the first number
+                defer output.poolBuffer.?.deinit();
                 output.showCountdown(output.state.duration) catch return;
             },
             .closed => {},
@@ -185,7 +184,6 @@ const PoolBuffer = struct {
         defer posix.close(fd);
         const size = output.height * stride;
         try posix.ftruncate(fd, @intCast(size));
-        std.log.info("height is {d} and width is {d} size is {d}", .{ output.height, output.width, size });
         const data = try posix.mmap(
             null,
             @intCast(size),

@@ -1,11 +1,11 @@
 <Window
-    x:Class="Wff.Views.MainWindow"
+    x:Class="Wff.Desktop.Views.MainWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converter="using:Wff.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:vm="using:Wff.ViewModels"
+    xmlns:vm="using:Wff.Desktop.ViewModels"
     Title="Wff"
     Width="400"
     Height="450"
@@ -14,6 +14,16 @@
     x:DataType="vm:MainWindowViewModel"
     Icon="/Assets/avalonia-logo.ico"
     mc:Ignorable="d">
+
+    <Design.DataContext>
+        <!--
+            This only sets the DataContext for the previewer in an IDE,
+            to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs)
+        -->
+        <vm:MainWindowViewModel />
+    </Design.DataContext>
+
+
     <Window.Styles>
         <Style Selector="Window">
             <Setter Property="Background" Value="#040216" />
@@ -59,12 +69,12 @@
                 <Grid ColumnDefinitions="*,*">
                     <Button
                         Classes.accent="{Binding Region, Converter={StaticResource StringEqual}, ConverterParameter='Screen'}"
-                        Command="{Binding TrySelectScreenRegionCommand}"
+                        Command="{Binding TrySelectScreenRegion}"
                         Content="Screen" />
                     <Button
                         Grid.Column="1"
                         Classes.accent="{Binding Region, Converter={StaticResource StringNotEqual}, ConverterParameter='Screen'}"
-                        Command="{Binding TrySlurpSelectRegionCommand}">
+                        Command="{Binding TrySlurpSelectRegion}">
                         <Button.Content>
                             <!--  Don't even need a multibinding here  -->
                             <MultiBinding Converter="{StaticResource RegionContentConverter}">
@@ -83,7 +93,7 @@
                     ItemsSource="{Binding AudioDevices}"
                     SelectedIndex="0"
                     SelectedItem="{Binding AudioDevice}" />
-                <Button Command="{Binding SelectFile}" Content="{Binding Filename}" />
+                <Button Command="{Binding SaveFileDialogAsync}" Content="{Binding Filename}" />
                 <Expander>
                     <Expander.Header>
                         Advanced Options
@@ -92,22 +102,22 @@
                 <StackPanel>
                     <TextBlock>Delay</TextBlock>
                     <NumericUpDown
-                        Maximum="30"
-                        Minimum="0"
                         FormatString="0"
                         Increment="1"
+                        Maximum="30"
+                        Minimum="0"
                         Value="{Binding Delay}" />
                 </StackPanel>
                 <Grid Grid.Row="1">
                     <StackPanel IsVisible="{Binding IsRecording}" Orientation="Vertical">
-                        <Button Command="{Binding TryStopRecordingCommand}" Content="Stop Recording" />
+                        <Button Command="{Binding StopRecording}" Content="Stop Recording" />
                         <TextBlock
                             HorizontalAlignment="Center"
                             Text="{Binding RecordingDuration}"
                             TextAlignment="Center" />
                     </StackPanel>
                     <Button
-                        Command="{Binding TryStartRecordingCommand}"
+                        Command="{Binding StartRecordingAsync}"
                         Content="Start Recording"
                         IsVisible="{Binding !IsRecording}" />
                 </Grid>
