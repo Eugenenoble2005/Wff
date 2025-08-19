@@ -1,7 +1,6 @@
 ﻿namespace Wff.Desktop.ViewModels;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
@@ -14,7 +13,7 @@ public partial class MainWindowViewModel : ViewModelBase
 {
     public MainWindowViewModel()
     {
-        Init();
+        _ = InitAsync();
     }
     List<string> Framerates => new() { "Default", "30", "60", "120" };
     List<string> audioBackends => new() { "Default", "Pipewire", "Pulseaudio", "ALSA" };
@@ -184,13 +183,18 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty]
     public string output = "";
 
-    public void Init()
+    public async Task InitAsync()
     {
-        //TODO: make async
-        AudioDevices = new(Utils.Ffmpeg.AudioDevices());
-        AudioCodecs = new(Utils.Ffmpeg.Codecs(Utils.FfmpegCodecTarget.Audio));
-        VideoCodecs = new(Utils.Ffmpeg.Codecs(Utils.FfmpegCodecTarget.Video));
-        Outputs = new(Utils.Ffmpeg.Outputs());
+        var audioDevicesTask = Utils.Ffmpeg.AudioDevicesAsync();
+        var audioCodecsTask = Utils.Ffmpeg.CodecsAsync(Utils.FfmpegCodecTarget.Audio);
+        var videoCodecsTask = Utils.Ffmpeg.CodecsAsync(Utils.FfmpegCodecTarget.Video);
+        var outputsTask = Utils.Ffmpeg.OutputsAsync();
+        await Task.WhenAll(audioDevicesTask, audioCodecsTask, videoCodecsTask, outputsTask);
+
+        AudioDevices = await audioDevicesTask;
+        AudioCodecs = await audioCodecsTask;
+        VideoCodecs = await videoCodecsTask;
+        Outputs = await outputsTask;
         Filename = initialFilename();
         Output = Outputs[0];
         AudioDevice = AudioDevices[0];
@@ -198,13 +202,17 @@ public partial class MainWindowViewModel : ViewModelBase
         VideoCodec = VideoCodecs[0];
         Framerate = Framerates[0];
         AudioBackend = AudioBackends[0];
-
+        Console.WriteLine(Outputs.Count);
     }
-    public ObservableCollection<string> AudioDevices { get; set; } = new();
-    public ObservableCollection<string> AudioCodecs { get; set; } = new();
-    public ObservableCollection<string> VideoCodecs { get; set; } = new();
-    public ObservableCollection<string> AudioBackends { get; set; } = new() { "Default", "Pipewire", "Pulseaudio", "ALSA" };
-    public ObservableCollection<string> Outputs { get; set; } = new();
+    [ObservableProperty]
+    public List<string> audioDevices = new();
+    [ObservableProperty]
+    public List<string> audioCodecs = new();
+    [ObservableProperty]
+    public List<string> videoCodecs = new();
+    [ObservableProperty]
+    public List<string> outputs = new();
+    public List<string> AudioBackends { get; set; } = new() { "Default", "Pipewire", "Pulseaudio", "ALSA" };
     WfrecorderDataModel DataModel => new()
     {
         Framerate = Framerate,

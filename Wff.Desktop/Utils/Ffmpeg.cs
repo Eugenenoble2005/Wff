@@ -2,9 +2,11 @@ namespace Wff.Utils;
 using System.Diagnostics;
 using System.Text.Json;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+
 public static class Ffmpeg
 {
-    public static List<string> AudioDevices()
+    public async static Task<List<string>> AudioDevicesAsync()
     {
         var process = new Process(
         );
@@ -32,10 +34,10 @@ public static class Ffmpeg
         };
         process.Start();
         process.BeginOutputReadLine();
-        process.WaitForExit();
+        await process.WaitForExitAsync();
         return audio_devices;
     }
-    public static List<string> Codecs(FfmpegCodecTarget target)
+    public async static Task<List<string>> CodecsAsync(FfmpegCodecTarget target)
     {
         var codecFilter = target switch
         {
@@ -66,10 +68,10 @@ public static class Ffmpeg
         if (process is null) return codecs;
         process.Start();
         process.BeginOutputReadLine();
-        process.WaitForExit();
+        await process.WaitForExitAsync();
         return codecs;
     }
-    public static List<string> Outputs()
+    public async static Task<List<string>> OutputsAsync()
     {
         var command = "wlr-randr";
         var process = new Process();
@@ -104,7 +106,7 @@ public static class Ffmpeg
         process.EnableRaisingEvents = true;
         process.Start();
         process.BeginOutputReadLine();
-        process.WaitForExit();
+        await process.WaitForExitAsync();
         tlock.Wait();
         return outputs;
     }

@@ -87,7 +87,7 @@
                         </Button.Content>
                     </Button>
                 </Grid>
-                <ComboBox ItemsSource="{Binding Outputs}" SelectedIndex="0" />
+                <ComboBox ItemsSource="{Binding Outputs}" SelectedItem="{Binding Output}" />
                 <TextBlock Classes="seperator" Text="Recording Settings" />
                 <ComboBox
                     ItemsSource="{Binding AudioDevices}"
