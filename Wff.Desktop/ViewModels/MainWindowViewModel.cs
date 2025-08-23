@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
+using FluentAvalonia.UI.Controls;
 using Wff.Utils;
 
 public partial class MainWindowViewModel : ViewModelBase
@@ -20,7 +21,7 @@ public partial class MainWindowViewModel : ViewModelBase
     RecorderProcess? recorderProcess = null;
     Process? countdownProcess = null;
     bool cancelledDuringCountdown = false;
-    string initialFilename()
+    string randomFilename()
     {
         string wffFolder = Path.Join(
             Environment.GetFolderPath(Environment.SpecialFolder.MyVideos),
@@ -63,8 +64,28 @@ public partial class MainWindowViewModel : ViewModelBase
         await process.WaitForExitAsync();
     }
 
+    async Task<bool> AssertOverwrite()
+    {
+        if (!File.Exists(Filename)) return true;
+        ContentDialog dialog = new()
+        {
+            Title = "Warning!",
+            Content = "This file already exists, overwrite?",
+            CloseButtonText = "Cancel",
+            PrimaryButtonText = "Overwrite",
+            SecondaryButtonText = "Pick Random Name and continue",
+        };
+        var response = await dialog.ShowAsync();
+        switch (response)
+        {
+            case ContentDialogResult.Primary: return true; //overwrite
+            case ContentDialogResult.Secondary: Filename = randomFilename(); return true; //new random name
+        }
+        return false;
+    }
     public async void StartRecordingAsync()
     {
+        if (!await AssertOverwrite()) return;
         IsRecording = true;
         cancelledDuringCountdown = false;
         if (Delay > 0)
@@ -89,6 +110,11 @@ public partial class MainWindowViewModel : ViewModelBase
         options.ShowOverwritePrompt = true;
         options.Title = "Save Recording";
         if (toplevel is null) return;
+
+        options.SuggestedStartLocation = await toplevel.StorageProvider.TryGetFolderFromPathAsync(Path.Join(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyVideos),
+            "wff-recordings"
+        ));
         var file = await toplevel.StorageProvider.SaveFilePickerAsync(options);
         if (file is not null) Filename = file.Path.AbsolutePath;
         //restore environment
@@ -195,7 +221,7 @@ public partial class MainWindowViewModel : ViewModelBase
         AudioCodecs = await audioCodecsTask;
         VideoCodecs = await videoCodecsTask;
         Outputs = await outputsTask;
-        Filename = initialFilename();
+        Filename = randomFilename();
         Output = Outputs[0];
         AudioDevice = AudioDevices[0];
         AudioCodec = AudioCodecs[0];
@@ -227,3 +253,4 @@ public partial class MainWindowViewModel : ViewModelBase
         AudioDevice = AudioDevice,
     };
 }
+
