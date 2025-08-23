@@ -95,11 +95,14 @@ public static class Ffmpeg
         };
         process.Exited += (s, e) =>
         {
-            var randrobj = JsonSerializer.Deserialize<List<RandrOutput>>(buffer.ToString());
-            if (randrobj is null) return;
-            randrobj.ForEach(p =>
-                outputs.Add(p.name)
-            );
+            var jsonDoc = JsonDocument.Parse(buffer.ToString());
+            foreach (var element in jsonDoc.RootElement.EnumerateArray())
+            {
+                if (element.TryGetProperty("name", out var nameProperty))
+                {
+                    outputs.Add(nameProperty.GetString() ?? string.Empty);
+                }
+            }
             tlock.Set();
         };
         if (process is null) return outputs;

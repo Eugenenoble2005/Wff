@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ZigCountdownProject>../zig/countdown</ZigCountdownProject>
+    <PublishAot>true</PublishAot>
     <ZigCountdownExecutable>$(ZigCountdownProject)/zig-out/bin/countdown</ZigCountdownExecutable>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
@@ -31,7 +32,7 @@
     <ItemGroup>
       <ZigBinary Include="$(ZigCountdownExecutable)" />
     </ItemGroup>
-    <Copy SourceFiles="@(ZigBinary)" DestinationFolder="$(PublishDir)" />
+  <Copy SourceFiles="@(ZigBinary)" DestinationFolder="$(PublishDir)" />
   </Target>
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.3.4" />

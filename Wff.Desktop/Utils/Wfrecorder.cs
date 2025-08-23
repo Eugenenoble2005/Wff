@@ -4,18 +4,14 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System;
 
-public static class Libc
-{
-    [DllImport("libc")]
-    public static extern int kill(int pid, int signal);
-}
-
 public static class ProcessExtension
 {
     public static int Signal(this Process p, int signal)
     {
-        return Libc.kill(p.Id, signal);
+        return kill(p.Id, signal);
     }
+    [DllImport("libc")]
+    private static extern int kill(int pid, int signal);
 }
 
 public record WfrecorderDataModel

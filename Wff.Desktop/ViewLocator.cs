@@ -1,3 +1,4 @@
+#pragma warning disable IL2057
 using System;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
